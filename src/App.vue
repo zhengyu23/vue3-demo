@@ -9,7 +9,7 @@
 
     <!-- query  -->
     <div class="query-box">
-      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索" />
+      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索" @input="handlerQueryName" />
       <div class="btn-list">
         <el-button type="primary" @click="handlerAdd">增加</el-button>
         <el-button type="danger" @click="handleDelList" v-if="multipleSelection.length >0">删除多选</el-button>
@@ -75,28 +75,28 @@
   let queryInput = $ref("")
   let tableData = $ref([{
     id:"1",
-    name: 'Tom',
+    name: 'Tom1',
     email: '123@qq.com',
     phone: '1380013800',
     state:  '在职',
     address: '广东省珠海',
   },{
     id:"2",
-    name: 'Tom',
+    name: 'Tom2',
     email: '123@qq.com',
     phone: '1380013800',
     state:  '在职',
     address: '广东省珠海',
   },{
     id:"3",
-    name: 'Tom',
+    name: 'Tom3',
     email: '123@qq.com',
     phone: '1380013800',
     state:  '在职',
     address: '广东省珠海',
   },{
     id:"4",
-    name: 'Tom',
+    name: 'Tom4',
     email: '123@qq.com',
     phone: '1380013800',
     state:  '在职',
@@ -113,6 +113,7 @@
     address:'北京'
   })
   let dialogType = $ref('add')
+  let tableDataCopy = Object.assign(tableData)
 
   /* 方法*/
 
@@ -175,8 +176,19 @@
       tableData[index] = tableForm
       // console.log(tableData[index]);
     }
-
     dialogFormVisible = false
+  }
+
+  // 搜索
+  const handlerQueryName = (val) => {
+    // console.log(queryInput);
+    // console.log(val)
+
+    if(val.length > 0) {
+      tableData = tableData.filter(item=> item.name.toLowerCase().match(val.toLowerCase()))
+    } else {
+      tableData = tableDataCopy
+    }
   }
 
 </script>
