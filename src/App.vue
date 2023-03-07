@@ -9,7 +9,7 @@
 
     <!-- query  -->
     <div class="query-box">
-      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索" @input="handlerQueryName" />
+      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索" @change="handlerQueryName" />
       <div class="btn-list">
         <el-button type="primary" @click="handlerAdd">增加</el-button>
         <el-button type="danger" @click="handleDelList" v-if="multipleSelection.length >0">删除多选</el-button>
@@ -37,6 +37,16 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+        background
+        layout="prev, pager, next"
+        style="display:flex; justify-content:center; margin-top: 10px;"
+        :total="total"
+        v-model:current-page="curPage"
+        @current-change="handlerChangePage"
+    />
+
+
     <!--dialog  -->
     <el-dialog v-model="dialogFormVisible" :title="dialogType === 'add' ? '新增': '编辑'">
       <el-form :model="tableForm">
@@ -70,6 +80,7 @@
 <script setup>
 
   import {ref} from "vue";
+  import request from "./utils/request.js"
 
   /* 数据*/
   let queryInput = $ref("")
@@ -115,7 +126,33 @@
   let dialogType = $ref('add')
   let tableDataCopy = Object.assign(tableData)
 
+  let total = $ref(20)
+  let curPage = $ref(1)
   /* 方法*/
+
+
+  /* request.js */
+  const getTableData = async (cur = 1) => {
+    // let res = request.get('/list/?pageSize=10&pageNum=&{cur}')
+
+    let res = await request.get('/list', {
+      pageSize: 10,
+      pageNum: cur
+    })  // baseURL: /user
+    tableData = res.list
+    total = res.total
+    curPage = res.pageNum
+    console.log(res);
+    console.log(total);
+  }
+  getTableData()
+  /* request.js */
+
+  // 请求分页
+  const handlerChangePage = (val) => {
+    getTableData(curPage)
+  }
+
 
   // 编辑
   const handlerEdit = (row) => {
@@ -127,17 +164,20 @@
   }
 
   // 删除单个
-  const handleRowDelete = ({id}) => {
+  const handleRowDelete = async ({ID}) => {
     // console.log(id)
+    /*  版本一
     let index = tableData.findIndex(item=>item.id === id)
-    tableData.splice(index, 1)
+    tableData.splice(index, 1) */
 
+  await request.delete(`/delete/${ID}`)
+    getTableData(curPage)
   }
 
   // 删除多选
   const handleDelList = () => {
-    multipleSelection.forEach(id=>{
-      handleRowDelete({id})
+    multipleSelection.forEach(ID=>{
+      handleRowDelete({ID})
     })
     multipleSelection = []
   }
@@ -148,7 +188,7 @@
     // console.log(val)
     multipleSelection = []
     val.forEach(item=>{
-      multipleSelection.push(item.id)
+      multipleSelection.push(item.ID)
     })
     // console.log(multipleSelection);
   }
@@ -161,34 +201,59 @@
   }
 
   // 确认
-  const dialogConfig = () => {
+  const dialogConfig = async () => {
+    dialogFormVisible = false
 
     // 判断是新增还是编辑
     if(dialogType === 'add') { // 新增
+
+      /*  版本一
       //1 拿数据
       //2 添加到table
       tableData.push({
         id:(tableData.length + 1).toString(),
         ...tableForm
       })
+      */
+      // 添加数据
+      let res = await request.post("/add",{
+        ...tableForm
+      })
+      // 刷新数据
+
+      await getTableData(curPage)
+
     } else {  // 编辑
+
+      /*
       let index = tableData.findIndex(item => item.id ===tableForm.id)
       tableData[index] = tableForm
-      // console.log(tableData[index]);
+      // console.log(tableData[index]);*/
+
+      await request.put(`/update/${tableForm.ID}`, {
+        ...tableForm
+      })
+      getTableData(curPage)
     }
-    dialogFormVisible = false
   }
 
   // 搜索
-  const handlerQueryName = (val) => {
+  const handlerQueryName = async (val) => {
     // console.log(queryInput);
     // console.log(val)
 
+    /*
     if(val.length > 0) {
       tableData = tableData.filter(item=> item.name.toLowerCase().match(val.toLowerCase()))
     } else {
       tableData = tableDataCopy
+    }*/
+    if (val.length > 0) {
+      tableData = await request.get(`/list/${val}`)
+    } else {
+      await getTableData(curPage)
     }
+
   }
 
 </script>
